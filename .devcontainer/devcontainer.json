@@ -39,9 +39,14 @@
         "ms-vscode.vscode-typescript-next",
         "bradlc.vscode-tailwindcss",
         "esbenp.prettier-vscode",
-        "ms-vscode.vscode-json"
-      ]
+        "ms-vscode.vscode-json",
+        "oven.bun-vscode"
+      ],
+      "settings": {
+        "typescript.preferences.includePackageJsonAutoImports": "on",
+        "bun.runtime": "/home/vscode/.bun/bin/bun"
+      }
     }
   },
-  "postCreateCommand": "npm install -g pnpm && cd frontend && npm install"
+  "postCreateCommand": "curl -fsSL https://bun.sh/install | bash && echo 'export PATH=\"$HOME/.bun/bin:$PATH\"' >> ~/.bashrc && source ~/.bashrc && cd frontend && bun install"
 }
