@@ -1,6 +1,32 @@
 # TechTok 起動方法
 
-## frontend
+## 1. devcontainer の起動
+
+### 利点
+
+プログラミング言語やフレームワークの install を devcontainer が自動でやってくれます
+
+### 前提
+
+1. vscode が install されてること
+2. vscode 拡張機能、「Remote - Development」extension が install されてること
+
+### 起動
+
+```bash
+$ git clone https://github.com/WNomunomu/techtok.git
+$ cd techtok
+$ code . # vscode で techtok directory を open
+
+# ctrl + shift + p でコマンドパレットを開く
+# reopen in devcontainer を実行
+# TechTok-FullStack-Devcontainer が起動
+
+```
+
+## 2. 各 application の起動
+
+### frontend
 
 ```bash
 $ cd frontend
@@ -12,7 +38,7 @@ $ bun run dev
 $ source ~/.bashrc
 ```
 
-## backend
+### backend
 
 ```bash
 $ cd backend
