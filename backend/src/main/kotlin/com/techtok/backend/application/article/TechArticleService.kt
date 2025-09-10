@@ -2,6 +2,7 @@ package com.techtok.backend.application.article
 
 import com.techtok.backend.application.article.response.TechArticleResponse
 import com.techtok.backend.application.article.response.QiitaArticle
+import com.techtok.backend.application.openai.OpenAiService
 import com.techtok.backend.domain.techarticle.TechArticle
 import com.techtok.backend.domain.techarticle.TechArticleRepository
 import org.slf4j.LoggerFactory
@@ -14,7 +15,8 @@ import java.time.format.DateTimeFormatter
 @Service
 class TechArticleService(
     private val techArticleRepository: TechArticleRepository,
-    private val webClient: WebClient
+    private val webClient: WebClient,
+    private val openAiService: OpenAiService
 ) {
     
     private val logger = LoggerFactory.getLogger(TechArticleService::class.java)
@@ -40,13 +42,14 @@ class TechArticleService(
                 
                 // Check if article already exists to avoid duplicates
                 if (!techArticleRepository.existsBySourceUrl(sourceUrl)) {
+                    val summary = openAiService.generateSummary(qiitaArticle.renderedBody)
 
                     val techArticle = TechArticle(
                         sourceUrl = sourceUrl,
                         title = qiitaArticle.title,
                         author = qiitaArticle.user.name + qiitaArticle.user.id,
                         publishedAt = LocalDateTime.parse(qiitaArticle.createdAt, ISO_FORMATTER),
-                        summary = ""
+                        summary = summary
                     )
                     
                     techArticleRepository.save(techArticle)
