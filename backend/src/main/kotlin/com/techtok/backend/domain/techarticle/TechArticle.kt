@@ -1,4 +1,4 @@
-package com.techtok.entity
+package com.techtok.backend.domain.techarticle
 
 import jakarta.persistence.*
 import jakarta.validation.constraints.*

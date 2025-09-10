@@ -1,6 +1,5 @@
-package com.techtok.repository
+package com.techtok.backend.domain.techarticle
 
-import com.techtok.entity.TechArticle
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
