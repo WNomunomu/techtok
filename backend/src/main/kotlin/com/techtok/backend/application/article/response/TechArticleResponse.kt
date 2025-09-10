@@ -38,7 +38,7 @@ data class QiitaTag(
 )
 
 data class TechArticleResponse(
-    val id: Long,
+    val id: Long?,
     val title: String,
     val author: String,
     val summary: String,
