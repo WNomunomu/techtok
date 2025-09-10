@@ -23,8 +23,7 @@ class ArticleService(
         private const val QIITA_API_URL = "https://qiita.com/api/v2/items"
         private val ISO_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME
     }
-    
-    @Scheduled(fixedRate = 100000) // Every 100 seconds
+    @Scheduled(fixedRate = 200000) // Every 200 seconds
     fun fetchAndSaveArticles() {
         try {
             logger.info("Fetching articles from Qiita API")
@@ -41,15 +40,13 @@ class ArticleService(
                 
                 // Check if article already exists to avoid duplicates
                 if (!articleRepository.existsBySourceUrl(sourceUrl)) {
-                    // Extract a summary from the body (first 200 characters)
-                    val summary = qiitaArticle.body.take(200).replace("\n", " ").trim()
-                    
+
                     val article = Article(
                         sourceUrl = sourceUrl,
                         title = qiitaArticle.title,
-                        author = qiitaArticle.user.name ?: qiitaArticle.user.id,
+                        author = qiitaArticle.user.name + qiitaArticle.user.id,
                         publishedAt = LocalDateTime.parse(qiitaArticle.createdAt, ISO_FORMATTER),
-                        summary = summary
+                        summary = ""
                     )
                     
                     articleRepository.save(article)
