@@ -22,7 +22,7 @@ class TechArticleController(
             ResponseEntity.ok(article)
         } else {
             ResponseEntity.notFound().build()
-        }) as ResponseEntity<TechArticleResponse>
+        })
     }
 
     @PostMapping("/fetch")
