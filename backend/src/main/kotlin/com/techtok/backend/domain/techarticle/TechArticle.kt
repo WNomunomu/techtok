@@ -1,11 +1,11 @@
-package com.techtok.backend.domain.article
+package com.techtok.backend.domain.techarticle
 
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
 @Entity
 @Table(name = "tech_articles")
-data class Article(
+data class TechArticle(
     @Column(name = "source_url", nullable = false, unique = true, length = 1000)
     val sourceUrl: String,
     

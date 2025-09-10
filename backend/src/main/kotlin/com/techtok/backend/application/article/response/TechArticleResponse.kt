@@ -37,7 +37,7 @@ data class QiitaTag(
     val versions: List<String>
 )
 
-data class ArticleResponse(
+data class TechArticleResponse(
     val id: Long,
     val title: String,
     val author: String,
