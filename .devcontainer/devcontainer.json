@@ -44,9 +44,11 @@
       ],
       "settings": {
         "typescript.preferences.includePackageJsonAutoImports": "on",
-        "bun.runtime": "/home/vscode/.bun/bin/bun"
+        "bun.runtime": "/home/vscode/.bun/bin/bun",
+        "terminal.integrated.defaultProfile.linux": "bash"
       }
     }
   },
-  "postCreateCommand": "curl -fsSL https://bun.sh/install | bash && echo 'export PATH=\"$HOME/.bun/bin:$PATH\"' >> ~/.bashrc && source ~/.bashrc && cd frontend && bun install"
+  "postCreateCommand": "bash -c 'curl -fsSL https://bun.sh/install | bash && echo \"Bun installation completed\" && ls -la ~/.bun/bin/'",
+  "postStartCommand": "bash -c 'echo \"Starting postStartCommand...\"; echo \"PATH: $PATH\"; if [ -f ~/.bun/bin/bun ]; then echo \"Bun found at ~/.bun/bin/bun\"; else echo \"Bun not found\"; fi; if [ -d \"/workspace/frontend\" ]; then echo \"Frontend directory found\"; cd /workspace/frontend && ~/.bun/bin/bun install; else echo \"Frontend directory not found at /workspace/frontend\"; ls -la /workspace/; fi'"
 }
