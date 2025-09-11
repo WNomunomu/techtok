@@ -35,9 +35,9 @@ export function LikedArticlesPage({ onBack }: LikedArticlesPageProps) {
   };
 
   return (
-    <div className="h-screen w-full bg-black text-white overflow-y-auto">
+    <div className="h-screen w-full bg-black text-white flex flex-col">
       {/* ヘッダー */}
-      <div className="sticky top-0 bg-black/90 backdrop-blur-sm border-b border-gray-800 z-10">
+      <div className="sticky top-0 bg-black/90 backdrop-blur-sm border-b border-black z-10">
         <div className="flex items-center justify-between p-4">
           <button
             onClick={onBack}
@@ -58,7 +58,7 @@ export function LikedArticlesPage({ onBack }: LikedArticlesPageProps) {
       </div>
 
       {/* 検索バー */}
-      <div className="p-4 bg-gray-900/50">
+      <div className="sticky top-[60px] z-10 p-4 bg-black backdrop-blur-sm border-b border-black">
         <div className="relative">
           <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
           <input
@@ -68,11 +68,17 @@ export function LikedArticlesPage({ onBack }: LikedArticlesPageProps) {
             placeholder="Search liked articles..."
             className="w-full bg-gray-800 text-white px-4 py-3 pl-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 border border-gray-700"
           />
+          {/* 検索ヒット数 */}
+          {likedArticles.length > 0 && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
+                {`${filteredArticles.length} of ${likedArticles.length} articles`}
+            </div>
+          )}
         </div>
       </div>
 
       {/* 記事一覧 */}
-      <div className="p-4">
+      <div className="flex-1 overflow-y-auto px-4">
         {likedArticles.length === 0 ? (
           <div className="text-center py-16">
             <Heart className="w-16 h-16 text-gray-600 mx-auto mb-4" />
@@ -104,16 +110,6 @@ export function LikedArticlesPage({ onBack }: LikedArticlesPageProps) {
           </div>
         )}
       </div>
-
-      {/* フッター情報 */}
-      {likedArticles.length > 0 && (
-        <div className="p-4 text-center text-gray-500 text-sm border-t border-gray-800">
-          {filteredArticles.length === likedArticles.length 
-            ? `${likedArticles.length} liked articles`
-            : `${filteredArticles.length} of ${likedArticles.length} articles`
-          }
-        </div>
-      )}
     </div>
   );
 }
