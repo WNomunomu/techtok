@@ -1,5 +1,6 @@
 package com.techtok.backend.application.openai
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -22,6 +23,7 @@ class OpenAiService(
 
     fun generateSummary(renderedBody: String): String {
         try {
+            logger.info("API Key loaded: ${if (apiKey.isNotEmpty()) "Yes (${apiKey.length} chars)" else "No - empty or null"}")
             val first100Words = extractFirst100Words(renderedBody)
 
             val requestBody = OpenAiRequest(
@@ -29,7 +31,10 @@ class OpenAiService(
                 messages = listOf(
                     OpenAiMessage(
                         role = "user",
-                        content = "Please provide a concise summary of this blog post content in 2-3 sentences: $first100Words"
+                        content = "Please provide a concise summary of this blog post content in 2-3 sentences: $first100Words." +
+                                "In your response, always use the language that the blog is written in. Also, you are writing for" +
+                                "a blog summarization website, so no need to start your response with 'this blog is' or something similar"
+
                     )
                 ),
                 maxTokens = 150,
@@ -68,7 +73,7 @@ class OpenAiService(
 data class OpenAiRequest(
     val model: String,
     val messages: List<OpenAiMessage>,
-    val maxTokens: Int,
+    @JsonProperty("max_tokens") val maxTokens: Int,
     val temperature: Double
 )
 
