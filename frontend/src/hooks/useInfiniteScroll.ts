@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { mockApi } from '../services/mockApi';
-import type { Article, InfiniteScrollState } from '../types/Article';
+import type { Article, InfiniteScrollState, ArticleListResponse } from '../types/Article';
 
 // 日付を1日進める関数 (実際には過去の日付に進む)
 const getNextDate = (dateString: string): string => {
@@ -23,53 +22,50 @@ export function useInfiniteScroll(pageSize: number = 20) {
     error: null,
   });
 
-  const [buffer, setBuffer] = useState<Article[]>([]);
+  const [allArticles, setAllArticles] = useState<Article[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const maxRetries = 3;
+  const CACHE_DURATION = 60000; // 1 minute in milliseconds
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement | null>(null);
 
-  const fetchArticles = useCallback(async (date: string, forBuffer: boolean = false) => {
+  const fetchArticles = useCallback(async () => {
+    const now = Date.now();
+    
+    // Check if we have cached data and it's still fresh (less than 1 minute old)
+    if (allArticles.length > 0 && now - lastFetchTime < CACHE_DURATION) {
+      return;
+    }
+
     if (state.isLoading) return;
 
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const data = await mockApi.getArticlesByDate(date, pageSize);
-      const articles = data.content || [];
-
-      if (articles.length === 0) {
-        // その日の記事がない場合、次の日付に進む
-        const nextDate = getNextDate(date);
-        setState(prev => ({
-          ...prev,
-          currentDate: nextDate,
-          hasNextPage: true,
-          isLoading: false,
-        }));
-        return;
+      // Call the real backend API
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+      const apiUrl = `${baseUrl}/articles`;
+      console.log('Fetching from:', apiUrl);
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      const articles: Article[] = await response.json();
 
-      if (forBuffer) {
-        // バッファに保存
-        setBuffer(articles);
-      } else {
-        // 直接記事一覧に追加
-        setState(prev => ({
-          ...prev,
-          articles: [...prev.articles, ...articles],
-          currentDate: data.last ? getNextDate(date) : date,
-          hasNextPage: !data.last || articles.length === pageSize,
-          isLoading: false,
-          error: null,
-        }));
-        
-        // 次の記事をバッファに取得
-        const nextDate = data.last ? getNextDate(date) : date;
-        if (data.last) {
-          fetchArticles(nextDate, true);
-        }
-      }
+      setAllArticles(articles);
+      setLastFetchTime(now);
+      
+      // Set initial articles (first page)
+      const initialArticles = articles.slice(0, pageSize);
+      setState(prev => ({
+        ...prev,
+        articles: initialArticles,
+        hasNextPage: articles.length > pageSize,
+        isLoading: false,
+        error: null,
+      }));
 
       setRetryCount(0);
     } catch (error) {
@@ -80,25 +76,26 @@ export function useInfiniteScroll(pageSize: number = 20) {
         error: error as Error,
       }));
     }
-  }, [pageSize, state.isLoading]);
+  }, [pageSize, state.isLoading, allArticles.length, lastFetchTime, CACHE_DURATION]);
 
   // 次のページを読み込む関数
   const loadNextPage = useCallback(() => {
     if (state.isLoading || !state.hasNextPage) return;
     
-    // バッファから記事を表示に追加
-    if (buffer.length > 0) {
+    const nextPage = currentPage + 1;
+    const startIndex = nextPage * pageSize;
+    const endIndex = startIndex + pageSize;
+    const nextArticles = allArticles.slice(startIndex, endIndex);
+    
+    if (nextArticles.length > 0) {
       setState(prev => ({
         ...prev,
-        articles: [...prev.articles, ...buffer],
+        articles: [...prev.articles, ...nextArticles],
+        hasNextPage: endIndex < allArticles.length,
       }));
-      setBuffer([]);
-      
-      fetchArticles(state.currentDate, true);
-    } else {
-      fetchArticles(state.currentDate, false);
+      setCurrentPage(nextPage);
     }
-  }, [state.isLoading, state.hasNextPage, state.currentDate, buffer, fetchArticles]);
+  }, [state.isLoading, state.hasNextPage, currentPage, pageSize, allArticles]);
 
   // エラー時の再試行
   const retry = useCallback(() => {
@@ -107,8 +104,8 @@ export function useInfiniteScroll(pageSize: number = 20) {
       return;
     }
     setRetryCount(prev => prev + 1);
-    fetchArticles(state.currentDate, false);
-  }, [retryCount, maxRetries, state.currentDate, fetchArticles]);
+    fetchArticles();
+  }, [retryCount, maxRetries, fetchArticles]);
 
   // リフレッシュ関数
   const refresh = useCallback(() => {
@@ -119,9 +116,11 @@ export function useInfiniteScroll(pageSize: number = 20) {
       isLoading: false,
       error: null,
     });
-    setBuffer([]);
+    setAllArticles([]);
+    setCurrentPage(0);
     setRetryCount(0);
-    fetchArticles(getTodayDate(), false);
+    setLastFetchTime(0); // Force fresh fetch by resetting cache time
+    fetchArticles();
   }, [fetchArticles]);
 
   // Intersection Observer の設定
@@ -142,10 +141,10 @@ export function useInfiniteScroll(pageSize: number = 20) {
 
   // 初期ロード
   useEffect(() => {
-    if (state.articles.length === 0 && !state.isLoading) {
-      fetchArticles(state.currentDate, false);
+    if (state.articles.length === 0 && !state.isLoading && allArticles.length === 0) {
+      fetchArticles();
     }
-  }, [state.articles.length, state.isLoading, state.currentDate, fetchArticles]);
+  }, [state.articles.length, state.isLoading, allArticles.length, fetchArticles]);
 
   return {
     articles: state.articles,
