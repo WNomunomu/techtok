@@ -10,7 +10,6 @@ import java.time.LocalDateTime
 
 @Repository
 interface TechArticleRepository : JpaRepository<TechArticle, Long> {
-
     @Query("SELECT t FROM TechArticle t ORDER BY t.createdAt DESC")
     fun findAllOrderByCreatedAtDesc(pageable: Pageable): Page<TechArticle>
 
@@ -18,10 +17,16 @@ interface TechArticleRepository : JpaRepository<TechArticle, Long> {
     fun findAllOrderByPublishedAtDesc(pageable: Pageable): Page<TechArticle>
 
     @Query("SELECT t FROM TechArticle t WHERE t.createdAt <= :untilDate ORDER BY t.createdAt DESC")
-    fun findByCreatedAtUntil(@Param("untilDate") untilDate: LocalDateTime, pageable: Pageable): Page<TechArticle>
+    fun findByCreatedAtUntil(
+        @Param("untilDate") untilDate: LocalDateTime,
+        pageable: Pageable,
+    ): Page<TechArticle>
 
     @Query("SELECT t FROM TechArticle t WHERE t.publishedAt <= :untilDate ORDER BY t.publishedAt DESC")
-    fun findByPublishedAtUntil(@Param("untilDate") untilDate: LocalDateTime, pageable: Pageable): Page<TechArticle>
+    fun findByPublishedAtUntil(
+        @Param("untilDate") untilDate: LocalDateTime,
+        pageable: Pageable,
+    ): Page<TechArticle>
 
     fun existsBySourceUrl(sourceUrl: String): Boolean
 

@@ -21,7 +21,7 @@ data class QiitaArticle(
     @JsonProperty("stocks_count")
     val stocksCount: Int,
     @JsonProperty("comments_count")
-    val commentsCount: Int
+    val commentsCount: Int,
 )
 
 data class QiitaUser(
@@ -29,12 +29,12 @@ data class QiitaUser(
     val name: String?,
     @JsonProperty("profile_image_url")
     val profileImageUrl: String?,
-    val description: String?
+    val description: String?,
 )
 
 data class QiitaTag(
     val name: String,
-    val versions: List<String>
+    val versions: List<String>,
 )
 
 data class TechArticleResponse(
@@ -44,5 +44,5 @@ data class TechArticleResponse(
     val summary: String,
     val sourceUrl: String,
     val publishedAt: LocalDateTime,
-    val createdAt: LocalDateTime
+    val createdAt: LocalDateTime,
 )
