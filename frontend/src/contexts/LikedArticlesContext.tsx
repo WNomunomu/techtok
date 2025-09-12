@@ -1,18 +1,10 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import type { WikiArticle } from "../components/WikiCard";
+import { useState, useEffect, ReactNode } from "react";
 import { Heart } from "lucide-react";
-import '../assets/heartAnimation.css';
-
-interface LikedArticlesContextType {
-    likedArticles: WikiArticle[];
-    toggleLike: (article: WikiArticle) => void;
-    isLiked: (pageid: number) => boolean;
-}
-
-const LikedArticlesContext = createContext<LikedArticlesContextType | undefined>(undefined);
+import { LikedArticlesContext } from "./LikedArticlesContextDefinition";
+import type { Article } from "../types/Article";
 
 export function LikedArticlesProvider({ children }: { children: ReactNode }) {
-    const [likedArticles, setLikedArticles] = useState<WikiArticle[]>(() => {
+    const [likedArticles, setLikedArticles] = useState<Article[]>(() => {
         const saved = localStorage.getItem("likedArticles");
         return saved ? JSON.parse(saved) : [];
     });
@@ -23,11 +15,11 @@ export function LikedArticlesProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("likedArticles", JSON.stringify(likedArticles));
     }, [likedArticles]);
 
-    const toggleLike = (article: WikiArticle) => {
+    const toggleLike = (article: Article) => {
         setLikedArticles((prev) => {
-            const alreadyLiked = prev.some((a) => a.pageid === article.pageid);
+            const alreadyLiked = prev.some((a) => a.id === article.id);
             if (alreadyLiked) {
-                return prev.filter((a) => a.pageid !== article.pageid);
+                return prev.filter((a) => a.id !== article.id);
             } else {
                 setShowHeart(true);
                 setTimeout(() => setShowHeart(false), 800);
@@ -36,26 +28,22 @@ export function LikedArticlesProvider({ children }: { children: ReactNode }) {
         });
     };
 
-    const isLiked = (pageid: number) => {
-        return likedArticles.some((article) => article.pageid === pageid);
+    const isLiked = (id: number) => {
+        return likedArticles.some((article) => article.id === id);
+    };
+
+    const removeLikedArticle = (id: number) => {
+        setLikedArticles((prev) => prev.filter((a) => a.id !== id));
     };
 
     return (
-        <LikedArticlesContext.Provider value={{ likedArticles, toggleLike, isLiked }}>
+        <LikedArticlesContext.Provider value={{ likedArticles, toggleLike, isLiked, removeLikedArticle }}>
             {children}
             {showHeart && (
-                <div className="heart-animation">
-                    <Heart size={200} strokeWidth={0} className="fill-white"/>
+                <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+                    <Heart size={200} strokeWidth={0} className="fill-red-500 animate-ping opacity-75"/>
                 </div>
             )}
         </LikedArticlesContext.Provider>
     );
-}
-
-export function useLikedArticles() {
-    const context = useContext(LikedArticlesContext);
-    if (!context) {
-        throw new Error("useLikedArticles must be used within a LikedArticlesProvider");
-    }
-    return context;
 }

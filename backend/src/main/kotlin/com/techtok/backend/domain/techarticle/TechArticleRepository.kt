@@ -22,4 +22,8 @@ interface TechArticleRepository : JpaRepository<TechArticle, Long> {
 
     @Query("SELECT t FROM TechArticle t WHERE t.publishedAt <= :untilDate ORDER BY t.publishedAt DESC")
     fun findByPublishedAtUntil(@Param("untilDate") untilDate: LocalDateTime, pageable: Pageable): Page<TechArticle>
+
+    fun existsBySourceUrl(sourceUrl: String): Boolean
+
+    fun findAllByOrderByCreatedAtDesc(): List<TechArticle>
 }
