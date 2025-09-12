@@ -1,12 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Article, InfiniteScrollState, ArticleListResponse } from '../types/Article';
-
-// 日付を1日進める関数 (実際には過去の日付に進む)
-const getNextDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  date.setDate(date.getDate() - 1); // 過去の日付に進む
-  return date.toISOString().split('T')[0];
-};
+import type { Article, InfiniteScrollState } from '../types/Article';
 
 // 今日の日付をYYYY-MM-DD形式で取得
 const getTodayDate = (): string => {
@@ -33,7 +26,7 @@ export function useInfiniteScroll(pageSize: number = 20) {
 
   const fetchArticles = useCallback(async () => {
     const now = Date.now();
-    
+
     // Check if we have cached data and it's still fresh (less than 1 minute old)
     if (allArticles.length > 0 && now - lastFetchTime < CACHE_DURATION) {
       return;
@@ -56,7 +49,7 @@ export function useInfiniteScroll(pageSize: number = 20) {
 
       setAllArticles(articles);
       setLastFetchTime(now);
-      
+
       // Set initial articles (first page)
       const initialArticles = articles.slice(0, pageSize);
       setState(prev => ({
@@ -81,12 +74,12 @@ export function useInfiniteScroll(pageSize: number = 20) {
   // 次のページを読み込む関数
   const loadNextPage = useCallback(() => {
     if (state.isLoading || !state.hasNextPage) return;
-    
+
     const nextPage = currentPage + 1;
     const startIndex = nextPage * pageSize;
     const endIndex = startIndex + pageSize;
     const nextArticles = allArticles.slice(startIndex, endIndex);
-    
+
     if (nextArticles.length > 0) {
       setState(prev => ({
         ...prev,
