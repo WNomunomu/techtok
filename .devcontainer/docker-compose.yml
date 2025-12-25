@@ -12,6 +12,8 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/mydatabase
       - SPRING_DATASOURCE_USERNAME=myuser
       - SPRING_DATASOURCE_PASSWORD=secret
+      - SPRING_PROFILES_ACTIVE=local
+      - APP_CORS_ALLOWED_ORIGIN=http://localhost:5173
       - NODE_ENV=development
     ports:
       - "5173:5173"
