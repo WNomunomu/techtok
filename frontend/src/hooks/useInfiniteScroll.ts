@@ -38,7 +38,10 @@ export function useInfiniteScroll(pageSize: number = 20) {
 
     try {
       // Call the real backend API
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+      const baseUrl = import.meta.env.VITE_API_BASE_URL;
+      if (!baseUrl) {
+        throw new Error('VITE_API_BASE_URL is not set');
+      }
       const apiUrl = `${baseUrl}/articles`;
       console.log('Fetching from:', apiUrl);
       const response = await fetch(apiUrl);
