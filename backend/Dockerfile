@@ -14,6 +14,7 @@ WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 
 ENV PORT=8080
+ENV SPRING_PROFILES_ACTIVE=prod
 EXPOSE 8080
 
 CMD ["sh", "-c", "java -Dserver.port=$PORT -jar /app/app.jar"]
