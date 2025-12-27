@@ -25,7 +25,7 @@ class TechArticleService(
         private val ISO_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME
     }
 
-    @Scheduled(fixedRate = 200000) // Every 200 seconds
+    @Scheduled(fixedRateString = "\${app.fetch-rate-ms}")
     fun fetchAndSaveArticles() {
         try {
             logger.info("Fetching articles from Qiita API")

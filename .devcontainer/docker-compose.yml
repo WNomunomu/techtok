@@ -16,6 +16,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=secret
       - SPRING_PROFILES_ACTIVE=local
       - APP_CORS_ALLOWED_ORIGIN=http://localhost:5173
+      - APP_FETCH_RATE_MS=20000000
       - NODE_ENV=development
     ports:
       - "5173:5173"
