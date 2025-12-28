@@ -38,12 +38,17 @@ class TechArticleService(
     @Value("\${app.random-refresh-limit}")
     private var randomRefreshLimit: Int = 0
 
+    @Value("\${app.qiita.access-token:}")
+    private var qiitaAccessToken: String = ""
+
     companion object {
         private const val QIITA_API_URL = "https://qiita.com/api/v2/items"
         private val ISO_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME
         private val CURSOR_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME
         private const val PER_PAGE = 100
         private const val POPULAR_QUERY = "stocks:>=50"
+        private const val POPULAR_MAX_PAGES = 3
+        private const val MAX_PAGES = 100
         private const val DEFAULT_LIMIT = 20
     }
 
@@ -58,7 +63,7 @@ class TechArticleService(
             }
 
             logger.info("Fetching articles from Qiita API (popular)")
-            val popularArticles = fetchQiitaItems(POPULAR_QUERY, null)
+            val popularArticles = fetchQiitaItems(POPULAR_QUERY, null, POPULAR_MAX_PAGES)
             popularArticles.forEach { qiitaArticle ->
                 upsertFromQiita(qiitaArticle)
             }
@@ -79,6 +84,7 @@ class TechArticleService(
     private fun fetchQiitaItems(
         query: String?,
         stopAtPublishedAt: LocalDateTime?,
+        maxPages: Int = MAX_PAGES,
     ): List<QiitaArticle> {
         val results = mutableListOf<QiitaArticle>()
         var page = 1
@@ -94,10 +100,15 @@ class TechArticleService(
                 uriBuilder.queryParam("query", query)
             }
 
-            val response =
+            var request =
                 webClient
                     .get()
-                    .uri(uriBuilder.build(true).toUri())
+                    .uri(uriBuilder.build().encode().toUri())
+            if (qiitaAccessToken.isNotBlank()) {
+                request = request.header(HttpHeaders.AUTHORIZATION, "Bearer $qiitaAccessToken")
+            }
+            val response =
+                request
                     .retrieve()
                     .toEntityList(QiitaArticle::class.java)
                     .block()
@@ -112,7 +123,7 @@ class TechArticleService(
                     hasNext = false
                 }
             }
-            if (page >= 100) {
+            if (page >= maxPages) {
                 hasNext = false
             }
             page += 1
