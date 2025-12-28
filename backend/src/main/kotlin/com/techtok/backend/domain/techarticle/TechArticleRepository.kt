@@ -36,5 +36,7 @@ interface TechArticleRepository : JpaRepository<TechArticle, Long> {
 
     fun findByQiitaId(qiitaId: String): TechArticle?
 
+    fun findTopByOrderByPublishedAtDesc(): TechArticle?
+
     fun findAllByOrderByCreatedAtDesc(): List<TechArticle>
 }
