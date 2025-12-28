@@ -3,6 +3,7 @@ package com.techtok.backend.domain.techarticle
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -37,6 +38,24 @@ interface TechArticleRepository : JpaRepository<TechArticle, Long> {
     fun findByQiitaId(qiitaId: String): TechArticle?
 
     fun findTopByOrderByPublishedAtDesc(): TechArticle?
+
+    @Modifying
+    @Query(
+        value = """
+            UPDATE tech_articles
+            SET random_key = random()
+            WHERE id IN (
+                SELECT id
+                FROM tech_articles
+                ORDER BY random()
+                LIMIT :limit
+            )
+            """,
+        nativeQuery = true,
+    )
+    fun refreshRandomKeys(
+        @Param("limit") limit: Int,
+    ): Int
 
     fun findAllByOrderByCreatedAtDesc(): List<TechArticle>
 }

@@ -6,9 +6,11 @@ import com.techtok.backend.application.openai.OpenAiService
 import com.techtok.backend.domain.techarticle.TechArticle
 import com.techtok.backend.domain.techarticle.TechArticleRepository
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.util.UriComponentsBuilder
 import java.time.LocalDateTime
@@ -21,6 +23,9 @@ class TechArticleService(
     private val openAiService: OpenAiService,
 ) {
     private val logger = LoggerFactory.getLogger(TechArticleService::class.java)
+
+    @Value("\${app.random-refresh-limit}")
+    private var randomRefreshLimit: Int = 0
 
     companion object {
         private const val QIITA_API_URL = "https://qiita.com/api/v2/items"
@@ -49,6 +54,13 @@ class TechArticleService(
         } catch (e: Exception) {
             logger.error("Error fetching articles from Qiita API", e)
         }
+    }
+
+    @Scheduled(cron = "\${app.random-refresh-cron}")
+    @Transactional
+    fun refreshRandomKeys() {
+        val updatedRows = techArticleRepository.refreshRandomKeys(randomRefreshLimit)
+        logger.info("Refreshed random_key for $updatedRows articles")
     }
 
     private fun fetchQiitaItems(
