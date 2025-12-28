@@ -30,5 +30,11 @@ interface TechArticleRepository : JpaRepository<TechArticle, Long> {
 
     fun existsBySourceUrl(sourceUrl: String): Boolean
 
+    fun existsByQiitaId(qiitaId: String): Boolean
+
+    fun findBySourceUrl(sourceUrl: String): TechArticle?
+
+    fun findByQiitaId(qiitaId: String): TechArticle?
+
     fun findAllByOrderByCreatedAtDesc(): List<TechArticle>
 }

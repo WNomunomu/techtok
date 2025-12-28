@@ -34,9 +34,17 @@ data class TechArticle(
     @Size(max = 1000, message = "ソースURLは1000文字以内で入力してください")
     @Pattern(regexp = "https?://.*", message = "有効なURLを入力してください")
     val sourceUrl: String,
+    @Column(name = "qiita_id", length = 64, unique = true)
+    val qiitaId: String? = null,
     @Column(name = "published_at", nullable = false)
     @NotNull(message = "公開日時は必須です")
     val publishedAt: LocalDateTime,
+    @Column(name = "updated_at")
+    val updatedAt: LocalDateTime? = null,
+    @Column(name = "stocks_count", nullable = false)
+    val stocksCount: Int = 0,
+    @Column(name = "random_key", nullable = false)
+    val randomKey: Double = Math.random(),
     @Column(name = "created_at", nullable = false)
     @NotNull(message = "作成日時は必須です")
     val createdAt: LocalDateTime = LocalDateTime.now(),
@@ -47,7 +55,11 @@ data class TechArticle(
         summary = "",
         author = "",
         sourceUrl = "",
+        qiitaId = null,
         publishedAt = LocalDateTime.now(),
+        updatedAt = null,
+        stocksCount = 0,
+        randomKey = Math.random(),
         createdAt = LocalDateTime.now(),
     )
 }
