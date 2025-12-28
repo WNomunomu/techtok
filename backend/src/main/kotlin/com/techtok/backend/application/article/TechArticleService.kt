@@ -1,7 +1,14 @@
 package com.techtok.backend.application.article
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.techtok.backend.application.article.response.ArticleFeedResponse
+import com.techtok.backend.application.article.response.FeedCursor
+import com.techtok.backend.application.article.response.LatestCursor
+import com.techtok.backend.application.article.response.PopularCursor
 import com.techtok.backend.application.article.response.QiitaArticle
+import com.techtok.backend.application.article.response.RandomCursor
 import com.techtok.backend.application.article.response.TechArticleResponse
+import com.techtok.backend.application.article.response.UpdatedCursor
 import com.techtok.backend.application.openai.OpenAiService
 import com.techtok.backend.domain.techarticle.TechArticle
 import com.techtok.backend.domain.techarticle.TechArticleRepository
@@ -15,12 +22,16 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.util.UriComponentsBuilder
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Base64
+import java.util.UUID
+import kotlin.random.Random
 
 @Service
 class TechArticleService(
     private val techArticleRepository: TechArticleRepository,
     private val webClient: WebClient,
     private val openAiService: OpenAiService,
+    private val objectMapper: ObjectMapper,
 ) {
     private val logger = LoggerFactory.getLogger(TechArticleService::class.java)
 
@@ -30,8 +41,10 @@ class TechArticleService(
     companion object {
         private const val QIITA_API_URL = "https://qiita.com/api/v2/items"
         private val ISO_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+        private val CURSOR_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME
         private const val PER_PAGE = 100
         private const val POPULAR_QUERY = "stocks:>=50"
+        private const val DEFAULT_LIMIT = 20
     }
 
     @Scheduled(fixedRateString = "\${app.fetch-rate-ms}")
@@ -154,28 +167,210 @@ class TechArticleService(
     fun getAllArticles(): List<TechArticleResponse> =
         techArticleRepository
             .findAllByOrderByCreatedAtDesc()
-            .map { article ->
-                TechArticleResponse(
-                    id = article.id,
-                    title = article.title,
-                    author = article.author,
-                    summary = article.summary,
-                    sourceUrl = article.sourceUrl,
-                    publishedAt = article.publishedAt,
-                    createdAt = article.createdAt,
+            .map { article -> toResponse(article) }
+
+    fun getMixedArticles(
+        limit: Int?,
+        cursor: String?,
+    ): ArticleFeedResponse {
+        val safeLimit = (limit ?: DEFAULT_LIMIT).coerceIn(1, 100)
+        val baseBucketSize = safeLimit / 4
+        val remainder = safeLimit % 4
+        val latestLimit = baseBucketSize + remainder
+        val updatedLimit = baseBucketSize
+        val popularLimit = baseBucketSize
+        val randomLimit = baseBucketSize
+
+        val decodedCursor = decodeCursor(cursor)
+        val seed = decodedCursor?.seed ?: UUID.randomUUID().toString()
+
+        val latest =
+            fetchLatestArticles(
+                latestLimit * 2,
+                decodedCursor?.latest,
+            )
+        val updated =
+            fetchUpdatedArticles(
+                updatedLimit * 2,
+                decodedCursor?.updated,
+            )
+        val popular =
+            fetchPopularArticles(
+                popularLimit * 2,
+                decodedCursor?.popular,
+            )
+        val random =
+            fetchRandomArticles(
+                randomLimit * 2,
+                decodedCursor?.random,
+            )
+
+        val combined = LinkedHashMap<Long, TechArticle>()
+        val allBuckets = listOf(latest, updated, popular, random)
+        allBuckets.forEach { bucket ->
+            bucket.forEach { article ->
+                article.id?.let { combined.putIfAbsent(it, article) }
+            }
+        }
+
+        var mixed = combined.values.toList()
+        mixed = mixed.shuffled(Random(seed.hashCode()))
+        var limited = mixed.take(safeLimit)
+
+        if (limited.size < safeLimit) {
+            val fallbackCursor = latest.lastOrNull()?.let { toLatestCursor(it) } ?: decodedCursor?.latest
+            val fallback =
+                fetchLatestArticles(
+                    safeLimit - limited.size,
+                    fallbackCursor,
+                )
+            fallback.forEach { article ->
+                article.id?.let { combined.putIfAbsent(it, article) }
+            }
+            mixed = combined.values.toList().shuffled(Random(seed.hashCode()))
+            limited = mixed.take(safeLimit)
+        }
+
+        val nextCursor =
+            if (limited.isEmpty()) {
+                null
+            } else {
+                encodeCursor(
+                    FeedCursor(
+                        latest = latest.lastOrNull()?.let { toLatestCursor(it) } ?: decodedCursor?.latest,
+                        updated = updated.lastOrNull()?.let { toUpdatedCursor(it) } ?: decodedCursor?.updated,
+                        popular = popular.lastOrNull()?.let { toPopularCursor(it) } ?: decodedCursor?.popular,
+                        random = random.lastOrNull()?.let { toRandomCursor(it) } ?: decodedCursor?.random,
+                        seed = seed,
+                    ),
                 )
             }
 
+        return ArticleFeedResponse(
+            items = limited.map { article -> toResponse(article) },
+            nextCursor = nextCursor,
+        )
+    }
+
     fun getArticleById(id: Long): TechArticleResponse? =
         techArticleRepository.findById(id).orElse(null)?.let { article ->
-            TechArticleResponse(
-                id = article.id,
-                title = article.title,
-                author = article.author,
-                summary = article.summary,
-                sourceUrl = article.sourceUrl,
-                publishedAt = article.publishedAt,
-                createdAt = article.createdAt,
-            )
+            toResponse(article)
         }
+
+    private fun toResponse(article: TechArticle): TechArticleResponse =
+        TechArticleResponse(
+            id = article.id,
+            title = article.title,
+            author = article.author,
+            summary = article.summary,
+            sourceUrl = article.sourceUrl,
+            publishedAt = article.publishedAt,
+            updatedAt = article.updatedAt,
+            stocksCount = article.stocksCount,
+            createdAt = article.createdAt,
+        )
+
+    private fun fetchLatestArticles(
+        limit: Int,
+        cursor: LatestCursor?,
+    ): List<TechArticle> {
+        val publishedAt = cursor?.publishedAt?.let { LocalDateTime.parse(it, CURSOR_FORMATTER) }
+        return techArticleRepository.findLatestForFeed(
+            publishedAt,
+            cursor?.id,
+            org.springframework.data.domain.PageRequest
+                .of(0, limit),
+        )
+    }
+
+    private fun fetchUpdatedArticles(
+        limit: Int,
+        cursor: UpdatedCursor?,
+    ): List<TechArticle> {
+        val updatedAt = cursor?.updatedAt?.let { LocalDateTime.parse(it, CURSOR_FORMATTER) }
+        return techArticleRepository.findUpdatedForFeed(
+            updatedAt,
+            cursor?.id,
+            org.springframework.data.domain.PageRequest
+                .of(0, limit),
+        )
+    }
+
+    private fun fetchPopularArticles(
+        limit: Int,
+        cursor: PopularCursor?,
+    ): List<TechArticle> {
+        val publishedAt = cursor?.publishedAt?.let { LocalDateTime.parse(it, CURSOR_FORMATTER) }
+        return techArticleRepository.findPopularForFeed(
+            cursor?.stocksCount,
+            publishedAt,
+            cursor?.id,
+            org.springframework.data.domain.PageRequest
+                .of(0, limit),
+        )
+    }
+
+    private fun fetchRandomArticles(
+        limit: Int,
+        cursor: RandomCursor?,
+    ): List<TechArticle> {
+        val randomKey = cursor?.randomKey
+        val firstBatch =
+            techArticleRepository.findRandomForFeed(
+                randomKey,
+                cursor?.id,
+                org.springframework.data.domain.PageRequest
+                    .of(0, limit),
+            )
+        if (firstBatch.size >= limit || randomKey == null) {
+            return firstBatch
+        }
+        val remaining = limit - firstBatch.size
+        val wrapBatch =
+            techArticleRepository.findRandomForFeed(
+                null,
+                null,
+                org.springframework.data.domain.PageRequest
+                    .of(0, remaining),
+            )
+        return firstBatch + wrapBatch
+    }
+
+    private fun decodeCursor(cursor: String?): FeedCursor? {
+        if (cursor.isNullOrBlank()) {
+            return null
+        }
+        val json = String(Base64.getUrlDecoder().decode(cursor))
+        return objectMapper.readValue(json, FeedCursor::class.java)
+    }
+
+    private fun encodeCursor(cursor: FeedCursor): String {
+        val json = objectMapper.writeValueAsString(cursor)
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(json.toByteArray())
+    }
+
+    private fun toLatestCursor(article: TechArticle): LatestCursor =
+        LatestCursor(
+            publishedAt = article.publishedAt.format(CURSOR_FORMATTER),
+            id = article.id ?: 0,
+        )
+
+    private fun toUpdatedCursor(article: TechArticle): UpdatedCursor =
+        UpdatedCursor(
+            updatedAt = article.updatedAt?.format(CURSOR_FORMATTER) ?: "",
+            id = article.id ?: 0,
+        )
+
+    private fun toPopularCursor(article: TechArticle): PopularCursor =
+        PopularCursor(
+            stocksCount = article.stocksCount,
+            publishedAt = article.publishedAt.format(CURSOR_FORMATTER),
+            id = article.id ?: 0,
+        )
+
+    private fun toRandomCursor(article: TechArticle): RandomCursor =
+        RandomCursor(
+            randomKey = article.randomKey,
+            id = article.id ?: 0,
+        )
 }
