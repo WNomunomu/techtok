@@ -44,5 +44,7 @@ data class TechArticleResponse(
     val summary: String,
     val sourceUrl: String,
     val publishedAt: LocalDateTime,
+    val updatedAt: LocalDateTime?,
+    val stocksCount: Int,
     val createdAt: LocalDateTime,
 )

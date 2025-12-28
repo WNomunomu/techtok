@@ -1,4 +1,4 @@
-import { Calendar, User, ExternalLink, Heart } from 'lucide-react';
+import { Calendar, User, ExternalLink, Heart, Bookmark } from 'lucide-react';
 import { useLikedArticles } from '../hooks/useLikedArticles';
 import type { Article } from '../types/Article';
 
@@ -58,6 +58,10 @@ export function TechArticleCard({ article }: TechArticleCardProps) {
           <div className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             <span>{formatDate(article.publishedAt)}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Bookmark className="w-3 h-3" />
+            <span>{article.stocksCount}</span>
           </div>
         </div>
 

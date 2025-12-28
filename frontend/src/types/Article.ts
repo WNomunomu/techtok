@@ -7,7 +7,14 @@ export interface Article {
   author: string;
   sourceUrl: string;
   publishedAt: string;
+  updatedAt: string | null;
+  stocksCount: number;
   createdAt: string;
+}
+
+export interface ArticleFeedResponse {
+  items: Article[];
+  nextCursor: string | null;
 }
 
 // APIレスポンス用の型（ページネーション対応）
@@ -45,6 +52,7 @@ export interface InfiniteScrollState {
   hasNextPage: boolean;
   isLoading: boolean;
   error: Error | null;
+  nextCursor: string | null;
 }
 
 // エラーレスポンス用の型

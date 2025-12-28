@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Article, InfiniteScrollState } from '../types/Article';
+import type { ArticleFeedResponse, InfiniteScrollState } from '../types/Article';
 
 // 今日の日付をYYYY-MM-DD形式で取得
 const getTodayDate = (): string => {
@@ -13,10 +13,9 @@ export function useInfiniteScroll(pageSize: number = 20) {
     hasNextPage: true,
     isLoading: false,
     error: null,
+    nextCursor: null,
   });
 
-  const [allArticles, setAllArticles] = useState<Article[]>([]);
-  const [currentPage, setCurrentPage] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const maxRetries = 3;
@@ -24,11 +23,11 @@ export function useInfiniteScroll(pageSize: number = 20) {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement | null>(null);
 
-  const fetchArticles = useCallback(async () => {
+  const fetchArticles = useCallback(async (cursor?: string | null) => {
     const now = Date.now();
 
     // Check if we have cached data and it's still fresh (less than 1 minute old)
-    if (allArticles.length > 0 && now - lastFetchTime < CACHE_DURATION) {
+    if (!cursor && state.articles.length > 0 && now - lastFetchTime < CACHE_DURATION) {
       return;
     }
 
@@ -42,25 +41,28 @@ export function useInfiniteScroll(pageSize: number = 20) {
       if (!baseUrl) {
         throw new Error('VITE_API_BASE_URL is not set');
       }
-      const apiUrl = `${baseUrl}/articles`;
+      const url = new URL(`${baseUrl}/articles`);
+      url.searchParams.set('limit', pageSize.toString());
+      if (cursor) {
+        url.searchParams.set('cursor', cursor);
+      }
+      const apiUrl = url.toString();
       console.log('Fetching from:', apiUrl);
       const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const articles: Article[] = await response.json();
-
-      setAllArticles(articles);
+      const payload: ArticleFeedResponse = await response.json();
+      const articles = payload.items;
       setLastFetchTime(now);
 
-      // Set initial articles (first page)
-      const initialArticles = articles.slice(0, pageSize);
       setState(prev => ({
         ...prev,
-        articles: initialArticles,
-        hasNextPage: articles.length > pageSize,
+        articles: cursor ? [...prev.articles, ...articles] : articles,
+        hasNextPage: payload.nextCursor !== null,
         isLoading: false,
         error: null,
+        nextCursor: payload.nextCursor,
       }));
 
       setRetryCount(0);
@@ -72,26 +74,14 @@ export function useInfiniteScroll(pageSize: number = 20) {
         error: error as Error,
       }));
     }
-  }, [pageSize, state.isLoading, allArticles.length, lastFetchTime, CACHE_DURATION]);
+  }, [pageSize, state.isLoading, state.articles.length, lastFetchTime, CACHE_DURATION]);
 
   // 次のページを読み込む関数
   const loadNextPage = useCallback(() => {
     if (state.isLoading || !state.hasNextPage) return;
 
-    const nextPage = currentPage + 1;
-    const startIndex = nextPage * pageSize;
-    const endIndex = startIndex + pageSize;
-    const nextArticles = allArticles.slice(startIndex, endIndex);
-
-    if (nextArticles.length > 0) {
-      setState(prev => ({
-        ...prev,
-        articles: [...prev.articles, ...nextArticles],
-        hasNextPage: endIndex < allArticles.length,
-      }));
-      setCurrentPage(nextPage);
-    }
-  }, [state.isLoading, state.hasNextPage, currentPage, pageSize, allArticles]);
+    fetchArticles(state.nextCursor);
+  }, [state.isLoading, state.hasNextPage, state.nextCursor, fetchArticles]);
 
   // エラー時の再試行
   const retry = useCallback(() => {
@@ -111,12 +101,11 @@ export function useInfiniteScroll(pageSize: number = 20) {
       hasNextPage: true,
       isLoading: false,
       error: null,
+      nextCursor: null,
     });
-    setAllArticles([]);
-    setCurrentPage(0);
     setRetryCount(0);
     setLastFetchTime(0); // Force fresh fetch by resetting cache time
-    fetchArticles();
+    fetchArticles(null);
   }, [fetchArticles]);
 
   // Intersection Observer の設定
@@ -137,10 +126,10 @@ export function useInfiniteScroll(pageSize: number = 20) {
 
   // 初期ロード
   useEffect(() => {
-    if (state.articles.length === 0 && !state.isLoading && allArticles.length === 0) {
+    if (state.articles.length === 0 && !state.isLoading) {
       fetchArticles();
     }
-  }, [state.articles.length, state.isLoading, allArticles.length, fetchArticles]);
+  }, [state.articles.length, state.isLoading, fetchArticles]);
 
   return {
     articles: state.articles,

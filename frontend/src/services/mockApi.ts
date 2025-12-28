@@ -1,7 +1,9 @@
 import type { Article, ArticleListResponse } from '../types/Article';
 
+type MockArticleBase = Omit<Article, 'updatedAt' | 'stocksCount'>;
+
 // モックデータ
-const mockArticles: Article[] = [
+const mockArticlesBase: MockArticleBase[] = [
   // 今日の記事 (2024-01-15)
   {
     id: 1,
@@ -276,6 +278,12 @@ const mockArticles: Article[] = [
     createdAt: '2025-09-10T23:30:00Z'
   }
 ];
+
+const mockArticles: Article[] = mockArticlesBase.map((article, index) => ({
+  ...article,
+  updatedAt: article.publishedAt,
+  stocksCount: (index + 1) * 5,
+}));
 
 // 配列をシャッフルする関数
 function shuffleArray<T>(array: T[]): T[] {
