@@ -274,62 +274,67 @@ class TechArticleService(
         limit: Int,
         cursor: LatestCursor?,
     ): List<TechArticle> {
-        val publishedAt = cursor?.publishedAt?.let { LocalDateTime.parse(it, CURSOR_FORMATTER) }
-        return techArticleRepository.findLatestForFeed(
-            publishedAt,
-            cursor?.id,
+        val pageable =
             org.springframework.data.domain.PageRequest
-                .of(0, limit),
-        )
+                .of(0, limit)
+        if (cursor == null) {
+            return techArticleRepository.findLatestForFeed(pageable)
+        }
+        val publishedAt = LocalDateTime.parse(cursor.publishedAt, CURSOR_FORMATTER)
+        return techArticleRepository.findLatestForFeedBefore(publishedAt, cursor.id, pageable)
     }
 
     private fun fetchUpdatedArticles(
         limit: Int,
         cursor: UpdatedCursor?,
     ): List<TechArticle> {
-        val updatedAt = cursor?.updatedAt?.let { LocalDateTime.parse(it, CURSOR_FORMATTER) }
-        return techArticleRepository.findUpdatedForFeed(
-            updatedAt,
-            cursor?.id,
+        val pageable =
             org.springframework.data.domain.PageRequest
-                .of(0, limit),
-        )
+                .of(0, limit)
+        if (cursor == null) {
+            return techArticleRepository.findUpdatedForFeed(pageable)
+        }
+        val updatedAt =
+            cursor.updatedAt
+                .takeIf { it.isNotBlank() }
+                ?.let { LocalDateTime.parse(it, CURSOR_FORMATTER) }
+                ?: return techArticleRepository.findUpdatedForFeed(pageable)
+        return techArticleRepository.findUpdatedForFeedBefore(updatedAt, cursor.id, pageable)
     }
 
     private fun fetchPopularArticles(
         limit: Int,
         cursor: PopularCursor?,
     ): List<TechArticle> {
-        val publishedAt = cursor?.publishedAt?.let { LocalDateTime.parse(it, CURSOR_FORMATTER) }
-        return techArticleRepository.findPopularForFeed(
-            cursor?.stocksCount,
-            publishedAt,
-            cursor?.id,
+        val pageable =
             org.springframework.data.domain.PageRequest
-                .of(0, limit),
-        )
+                .of(0, limit)
+        if (cursor == null) {
+            return techArticleRepository.findPopularForFeed(pageable)
+        }
+        val publishedAt = LocalDateTime.parse(cursor.publishedAt, CURSOR_FORMATTER)
+        return techArticleRepository.findPopularForFeedBefore(cursor.stocksCount, publishedAt, cursor.id, pageable)
     }
 
     private fun fetchRandomArticles(
         limit: Int,
         cursor: RandomCursor?,
     ): List<TechArticle> {
-        val randomKey = cursor?.randomKey
+        val pageable =
+            org.springframework.data.domain.PageRequest
+                .of(0, limit)
         val firstBatch =
-            techArticleRepository.findRandomForFeed(
-                randomKey,
-                cursor?.id,
-                org.springframework.data.domain.PageRequest
-                    .of(0, limit),
-            )
-        if (firstBatch.size >= limit || randomKey == null) {
+            if (cursor == null) {
+                techArticleRepository.findRandomForFeed(pageable)
+            } else {
+                techArticleRepository.findRandomForFeedAfter(cursor.randomKey, cursor.id, pageable)
+            }
+        if (firstBatch.size >= limit || cursor == null) {
             return firstBatch
         }
         val remaining = limit - firstBatch.size
         val wrapBatch =
             techArticleRepository.findRandomForFeed(
-                null,
-                null,
                 org.springframework.data.domain.PageRequest
                     .of(0, remaining),
             )

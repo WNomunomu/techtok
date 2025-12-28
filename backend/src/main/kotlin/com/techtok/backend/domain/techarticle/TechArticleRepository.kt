@@ -39,79 +39,86 @@ interface TechArticleRepository : JpaRepository<TechArticle, Long> {
 
     fun findTopByOrderByPublishedAtDesc(): TechArticle?
 
+    @Query("SELECT t FROM TechArticle t ORDER BY t.publishedAt DESC, t.id DESC")
+    fun findLatestForFeed(pageable: org.springframework.data.domain.Pageable): List<TechArticle>
+
     @Query(
         """
             SELECT t FROM TechArticle t
-            WHERE (
-                :publishedAt IS NULL
-                OR t.publishedAt < :publishedAt
+            WHERE t.publishedAt < :publishedAt
                 OR (t.publishedAt = :publishedAt AND t.id < :id)
-            )
             ORDER BY t.publishedAt DESC, t.id DESC
             """,
     )
-    fun findLatestForFeed(
-        @Param("publishedAt") publishedAt: LocalDateTime?,
-        @Param("id") id: Long?,
+    fun findLatestForFeedBefore(
+        @Param("publishedAt") publishedAt: LocalDateTime,
+        @Param("id") id: Long,
         pageable: org.springframework.data.domain.Pageable,
     ): List<TechArticle>
+
+    @Query(
+        """
+            SELECT t FROM TechArticle t
+            WHERE t.updatedAt IS NOT NULL
+            ORDER BY t.updatedAt DESC, t.id DESC
+            """,
+    )
+    fun findUpdatedForFeed(pageable: org.springframework.data.domain.Pageable): List<TechArticle>
 
     @Query(
         """
             SELECT t FROM TechArticle t
             WHERE t.updatedAt IS NOT NULL AND (
-                :updatedAt IS NULL
-                OR t.updatedAt < :updatedAt
+                t.updatedAt < :updatedAt
                 OR (t.updatedAt = :updatedAt AND t.id < :id)
             )
             ORDER BY t.updatedAt DESC, t.id DESC
             """,
     )
-    fun findUpdatedForFeed(
-        @Param("updatedAt") updatedAt: LocalDateTime?,
-        @Param("id") id: Long?,
+    fun findUpdatedForFeedBefore(
+        @Param("updatedAt") updatedAt: LocalDateTime,
+        @Param("id") id: Long,
         pageable: org.springframework.data.domain.Pageable,
     ): List<TechArticle>
+
+    @Query("SELECT t FROM TechArticle t ORDER BY t.stocksCount DESC, t.publishedAt DESC, t.id DESC")
+    fun findPopularForFeed(pageable: org.springframework.data.domain.Pageable): List<TechArticle>
 
     @Query(
         """
             SELECT t FROM TechArticle t
-            WHERE (
-                :stocksCount IS NULL
-                OR t.stocksCount < :stocksCount
+            WHERE t.stocksCount < :stocksCount
                 OR (
                     t.stocksCount = :stocksCount
                     AND (
-                        :publishedAt IS NULL
-                        OR t.publishedAt < :publishedAt
+                        t.publishedAt < :publishedAt
                         OR (t.publishedAt = :publishedAt AND t.id < :id)
                     )
                 )
-            )
             ORDER BY t.stocksCount DESC, t.publishedAt DESC, t.id DESC
             """,
     )
-    fun findPopularForFeed(
-        @Param("stocksCount") stocksCount: Int?,
-        @Param("publishedAt") publishedAt: LocalDateTime?,
-        @Param("id") id: Long?,
+    fun findPopularForFeedBefore(
+        @Param("stocksCount") stocksCount: Int,
+        @Param("publishedAt") publishedAt: LocalDateTime,
+        @Param("id") id: Long,
         pageable: org.springframework.data.domain.Pageable,
     ): List<TechArticle>
+
+    @Query("SELECT t FROM TechArticle t ORDER BY t.randomKey ASC, t.id ASC")
+    fun findRandomForFeed(pageable: org.springframework.data.domain.Pageable): List<TechArticle>
 
     @Query(
         """
             SELECT t FROM TechArticle t
-            WHERE (
-                :randomKey IS NULL
-                OR t.randomKey > :randomKey
+            WHERE t.randomKey > :randomKey
                 OR (t.randomKey = :randomKey AND t.id > :id)
-            )
             ORDER BY t.randomKey ASC, t.id ASC
             """,
     )
-    fun findRandomForFeed(
-        @Param("randomKey") randomKey: Double?,
-        @Param("id") id: Long?,
+    fun findRandomForFeedAfter(
+        @Param("randomKey") randomKey: Double,
+        @Param("id") id: Long,
         pageable: org.springframework.data.domain.Pageable,
     ): List<TechArticle>
 
