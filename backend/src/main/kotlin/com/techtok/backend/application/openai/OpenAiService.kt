@@ -16,6 +16,9 @@ class OpenAiService(
     @Value("\${openai.api.key}")
     private lateinit var apiKey: String
 
+    @Value("\${openai.model}")
+    private lateinit var model: String
+
     companion object {
         private const val OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
     }
@@ -27,7 +30,7 @@ class OpenAiService(
 
             val requestBody =
                 OpenAiRequest(
-                    model = "gpt-4.1-nano",
+                    model = model,
                     messages =
                         listOf(
                             OpenAiMessage(
