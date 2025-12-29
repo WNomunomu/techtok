@@ -17,6 +17,7 @@ services:
       - APP_FETCH_RATE_MS=20000000
       - APP_RANDOM_REFRESH_CRON="0 0 3 * * *"
       - APP_RANDOM_REFRESH_LIMIT=300
+      - OPENAI_MODEL=gpt-5-nano
       - NODE_ENV=development
     ports:
       - "5173:5173"
