@@ -44,12 +44,12 @@ export function LikedArticlesPage({ onBack }: LikedArticlesPageProps) {
             className="flex items-center gap-2 text-white hover:text-gray-300 transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="text-lg font-semibold">Back</span>
+            <span className="text-base font-semibold">Back</span>
           </button>
           
           <div className="flex items-center gap-2">
             <Heart className="w-6 h-6 text-red-500 fill-current" />
-            <h1 className="text-xl font-bold">Liked Articles</h1>
+            <h1 className="text-lg font-bold">Liked Articles</h1>
             <span className="text-gray-400">({likedArticles.length})</span>
           </div>
           
@@ -78,37 +78,41 @@ export function LikedArticlesPage({ onBack }: LikedArticlesPageProps) {
       </div>
 
       {/* 記事一覧 */}
-      <div className="flex-1 overflow-y-auto px-4">
-        {likedArticles.length === 0 ? (
-          <div className="text-center py-16">
-            <Heart className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-400 mb-2">No liked articles yet</h2>
-            <p className="text-gray-500">Start liking articles to see them here!</p>
-          </div>
-        ) : filteredArticles.length === 0 ? (
-          <div className="text-center py-16">
-            <Search className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-400 mb-2">No articles found</h2>
-            <p className="text-gray-500">Try adjusting your search terms</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredArticles.map((article) => (
-              <div key={article.id} className="relative group">
-                <TechArticleCard article={article} />
-                
-                {/* 削除ボタン */}
-                <button
-                  onClick={() => handleRemoveArticle(article)}
-                  className="absolute top-4 right-4 p-2 bg-red-600/80 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer"
-                  aria-label="Remove from liked articles"
-                >
-                  <Trash2 className="w-4 h-4 text-white" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-md mx-auto bg-gray-900 min-h-full">
+          {likedArticles.length === 0 ? (
+            <div className="text-center py-16 px-6">
+              <Heart className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-gray-400 mb-2">No liked articles yet</h2>
+              <p className="text-gray-500">Start liking articles to see them here!</p>
+            </div>
+          ) : filteredArticles.length === 0 ? (
+            <div className="text-center py-16 px-6">
+              <Search className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-gray-400 mb-2">No articles found</h2>
+              <p className="text-gray-500">Try adjusting your search terms</p>
+            </div>
+          ) : (
+            <>
+              {filteredArticles.map((article) => (
+                <div key={article.id} className="w-full p-6 relative group">
+                  <div className="w-full">
+                    <TechArticleCard article={article} />
+                  </div>
+                  
+                  {/* 削除ボタン */}
+                  <button
+                    onClick={() => handleRemoveArticle(article)}
+                    className="absolute top-4 right-4 p-2 bg-red-600/80 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer"
+                    aria-label="Remove from liked articles"
+                  >
+                    <Trash2 className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
