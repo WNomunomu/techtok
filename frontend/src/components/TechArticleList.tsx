@@ -21,7 +21,7 @@ export function TechArticleList() {
   }
 
   return (
-    <div className="h-screen w-[400px] max-w-[92vw] mx-auto overflow-y-scroll snap-y snap-mandatory bg-gray-900">
+    <div className="h-screen max-w-md mx-auto overflow-y-scroll snap-y snap-mandatory bg-gray-900">
       {/* 初期ローディング状態 */}
       {articles.length === 0 && isLoading ? (
         <div className="h-screen flex items-center justify-center">
@@ -35,7 +35,7 @@ export function TechArticleList() {
         <>
           {articles.map((article, index) => (
             <div key={article.id} className="h-screen w-full snap-start flex items-center justify-center p-6 relative">
-              <div className="w-full h-full max-h-[calc(100vh-3rem)]">
+              <div className="w-full h-full">
                 <TechArticleCard article={article} />
               </div>
               {/* 最後の記事の上にローディング表示 */}

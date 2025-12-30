@@ -18,7 +18,7 @@ export function TechArticleCard({ article }: TechArticleCardProps) {
   };
 
   return (
-    <div className="h-full pt-12 pb-4">
+    <div className="h-full pt-12 pb-4 box-border">
       <div className="bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow flex flex-col h-full">
         {/* ヘッダー */}
         <div className="flex justify-between items-start mb-6">
