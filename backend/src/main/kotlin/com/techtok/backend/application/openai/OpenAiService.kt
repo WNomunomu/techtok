@@ -20,7 +20,7 @@ class OpenAiService(
     private lateinit var model: String
 
     companion object {
-        private const val OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
+        private const val OPENAI_API_URL = "https://api.openai.com/v1/responses"
     }
 
     fun generateSummary(renderedBody: String): String {
@@ -31,18 +31,23 @@ class OpenAiService(
             val requestBody =
                 OpenAiRequest(
                     model = model,
-                    messages =
+                    input =
                         listOf(
                             OpenAiMessage(
                                 role = "user",
                                 content =
-                                    "Please provide a concise summary of this blog post content in 2-3 sentences: $first100Words." +
-                                        "In your response, always use the language that the blog is written in. Also, you are writing for" +
-                                        "a blog summarization website, so no need to start your response with 'this blog is' or something similar",
+                                    "以下の本文を2〜3文で簡潔に要約してください：" +
+                                        "\n<条件>\n" +
+                                        "- 敬語は使わない（だ・である）。\n" +
+                                        "- 前置き（例:「このブログは」「この記事では」など）は禁止。\n" +
+                                        "- 冗長な表現を避け、要点を出力。" +
+                                        "\n<本文>\n" +
+                                        first100Words,
                             ),
                         ),
-                    maxTokens = 150,
-                    temperature = 0.7,
+                    maxOutputTokens = 250,
+                    reasoning = OpenAiReasoning(effort = "minimal"),
+                    text = OpenAiText(verbosity = "low"),
                 )
 
             val response =
@@ -56,17 +61,26 @@ class OpenAiService(
                     .bodyToMono<OpenAiResponse>()
                     .block()
 
-            return response
-                ?.choices
-                ?.firstOrNull()
-                ?.message
-                ?.content
-                ?.trim()
-                ?: "Unable to generate summary"
+            return extractOutputText(response) ?: "Unable to generate summary"
         } catch (e: Exception) {
             logger.error("Error generating summary with OpenAI", e)
             return "Summary generation failed"
         }
+    }
+
+    private fun extractOutputText(response: OpenAiResponse?): String? {
+        if (response == null) {
+            return null
+        }
+
+        return response
+            .output
+            .orEmpty()
+            .asSequence()
+            .flatMap { it.content.orEmpty().asSequence() }
+            .firstOrNull { !it.text.isNullOrBlank() }
+            ?.text
+            ?.trim()
     }
 
     private fun extractFirst100Words(text: String): String {
@@ -84,9 +98,18 @@ class OpenAiService(
 
 data class OpenAiRequest(
     val model: String,
-    val messages: List<OpenAiMessage>,
-    @JsonProperty("max_tokens") val maxTokens: Int,
-    val temperature: Double,
+    val input: List<OpenAiMessage>,
+    @JsonProperty("max_output_tokens") val maxOutputTokens: Int,
+    val reasoning: OpenAiReasoning,
+    val text: OpenAiText? = null,
+)
+
+data class OpenAiReasoning(
+    val effort: String,
+)
+
+data class OpenAiText(
+    val verbosity: String,
 )
 
 data class OpenAiMessage(
@@ -95,9 +118,14 @@ data class OpenAiMessage(
 )
 
 data class OpenAiResponse(
-    val choices: List<OpenAiChoice>,
+    val output: List<OpenAiOutput>? = null,
 )
 
-data class OpenAiChoice(
-    val message: OpenAiMessage,
+data class OpenAiOutput(
+    val content: List<OpenAiContent>? = null,
+)
+
+data class OpenAiContent(
+    val type: String,
+    val text: String? = null,
 )
