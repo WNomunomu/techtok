@@ -21,7 +21,7 @@ export function TechArticleList() {
   }
 
   return (
-    <div className="h-screen w-full overflow-y-scroll snap-y snap-mandatory">
+    <div className="h-screen w-[400px] max-w-[92vw] mx-auto overflow-y-scroll snap-y snap-mandatory bg-gray-900">
       {/* 初期ローディング状態 */}
       {articles.length === 0 && isLoading ? (
         <div className="h-screen flex items-center justify-center">
