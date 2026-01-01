@@ -64,7 +64,7 @@ interface FullScreenErrorProps {
 
 export function FullScreenError({ error, onRetry, message }: FullScreenErrorProps) {
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-black">
+    <div className="h-dvh w-full flex items-center justify-center bg-black">
       <ErrorState error={error} onRetry={onRetry} message={message} />
     </div>
   );

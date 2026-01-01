@@ -9,7 +9,7 @@ function App() {
   const [showLikedArticles, setShowLikedArticles] = useState(false);
 
   return (
-    <div className="h-screen w-full bg-black text-white">
+    <div className="h-dvh w-full bg-black text-white">
       {showLikedArticles ? (
         <LikedArticlesPage onBack={() => setShowLikedArticles(false)} />
       ) : (
