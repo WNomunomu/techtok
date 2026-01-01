@@ -31,7 +31,7 @@ interface FullScreenLoadingProps {
 
 export function FullScreenLoading({ message = 'Loading articles...' }: FullScreenLoadingProps) {
   return (
-    <div className="h-screen w-full flex items-center justify-center">
+    <div className="h-dvh w-full flex items-center justify-center">
       <LoadingState message={message} size="lg" />
     </div>
   );

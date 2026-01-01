@@ -35,7 +35,7 @@ export function LikedArticlesPage({ onBack }: LikedArticlesPageProps) {
   };
 
   return (
-    <div className="h-screen w-full bg-black text-white flex flex-col">
+    <div className="h-dvh w-full bg-black text-white flex flex-col">
       {/* ヘッダー */}
       <div className="sticky top-0 bg-black/90 backdrop-blur-sm border-b border-black z-10">
         <div className="flex items-center justify-between p-4">

@@ -21,20 +21,20 @@ export function TechArticleList() {
   }
 
   return (
-    <div className="h-screen max-w-md mx-auto overflow-y-scroll snap-y snap-mandatory bg-gray-900">
+    <div className="h-dvh max-w-md mx-auto overflow-y-scroll snap-y snap-mandatory bg-gray-900">
       {/* 初期ローディング状態 */}
       {articles.length === 0 && isLoading ? (
-        <div className="h-screen flex items-center justify-center">
+        <div className="h-dvh flex items-center justify-center">
           <LoadingState message="Loading articles..." size="lg" />
         </div>
       ) : articles.length === 0 && !isLoading ? (
-        <div className="h-screen flex items-center justify-center">
+        <div className="h-dvh flex items-center justify-center">
           <p className="text-gray-400 text-sm">No articles found</p>
         </div>
       ) : (
         <>
           {articles.map((article, index) => (
-            <div key={article.id} className="h-screen w-full snap-start flex items-center justify-center p-6 relative">
+            <div key={article.id} className="h-dvh w-full snap-start flex items-center justify-center p-6 relative">
               <div className="w-full h-full">
                 <TechArticleCard article={article} />
               </div>
